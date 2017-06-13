@@ -1,0 +1,10 @@
+# iPython
+*.ipynb_checkpoints
+
+# Compiled files
+*.pyc
+*.pem
+*.pkl
+
+# OSX
+.DS_Store
