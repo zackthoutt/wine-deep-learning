@@ -56,30 +56,49 @@ class Scraper():
         info_containers = review_soup.find(
             'ul', {'class': 'primary-info'}).find_all('li', {'class': 'row'})
 
-        price_string = info_containers[0].find(
-            'div', {'class': 'info'}).span.span.contents[0].split(',')[0]
-        price = int(re.sub('[$]', '', price_string))
-
-        designation = info_containers[1].find('div', {'class': 'info'}).span.span.contents[0]
-        variety = info_containers[2].find(
-            'div', {'class': 'info'}).span.findChildren()[0].contents[0]
-
-        appellation_info = info_containers[3].find('div', {'class': 'info'}).span.findChildren()
-        if self.appellation_format == APPELLATION_FORMAT_1:
-            region_1 = appellation_info[0].contents[0]
-            region_2 = None
-            province = appellation_info[1].contents[0]
-            country = appellation_info[1].contents[0]
-        elif self.appellation_format == APPELLATION_FORMAT_2:
-            region_1 = appellation_info[0].contents[0]
-            region_2 = appellation_info[1].contents[0]
-            province = appellation_info[2].contents[0]
-            country = appellation_info[3].contents[0]
+        if self.price_index is not None:
+            price_string = info_containers[self.price_index].find(
+                'div', {'class': 'info'}).span.span.contents[0].split(',')[0]
+            price = int(re.sub('[$]', '', price_string))
         else:
-            raise ReviewFormatException('Unknown appellation format')
+            price = None
 
-        winery = info_containers[4].find(
-            'div', {'class': 'info'}).span.span.findChildren()[0].contents[0]
+        if self.designation_index is not None:
+            designation = info_containers[self.designation_index].find('div', {'class': 'info'}).span.span.contents[0]
+        else:
+            designation = None
+
+        if self.variety_index is not None:
+            variety = info_containers[self.variety_index].find(
+                'div', {'class': 'info'}).span.findChildren()[0].contents[0]
+        else:
+            variety = None
+
+        if self.appellation_index is not None:
+            appellation_info = info_containers[self.appellation_index].find('div', {'class': 'info'}).span.findChildren()
+            if self.appellation_format == APPELLATION_FORMAT_1:
+                region_1 = appellation_info[0].contents[0]
+                region_2 = None
+                province = appellation_info[1].contents[0]
+                country = appellation_info[1].contents[0]
+            elif self.appellation_format == APPELLATION_FORMAT_2:
+                region_1 = appellation_info[0].contents[0]
+                region_2 = appellation_info[1].contents[0]
+                province = appellation_info[2].contents[0]
+                country = appellation_info[3].contents[0]
+            else:
+                raise ReviewFormatException('Unknown appellation format')
+        else:
+            region_1 = None
+            region_2 = None
+            province = None
+            country = None
+
+        if self.winery_index is not None:
+            winery = info_containers[4].find(
+                'div', {'class': 'info'}).span.span.findChildren()[0].contents[0]
+        else:
+            winery = None
 
         review_data = {
             'points': points,
@@ -96,16 +115,43 @@ class Scraper():
         self.data.append(review_data)
 
     def determine_review_format(self, review_soup):
-        # The appellation format is changes based on where in the world the winery is located
         info_containers = review_soup.find(
             'ul', {'class': 'primary-info'}).find_all('li', {'class': 'row'})
-        appellation_info = info_containers[3].find('div', {'class': 'info'}).span.findChildren()
-        if len(appellation_info) == 3:
-            self.appellation_format = APPELLATION_FORMAT_1
-        elif len(appellation_info) == 4:
-            self.appellation_format = APPELLATION_FORMAT_2
-        else:
-            self.appellation_format = UNKNOWN_FORMAT
+
+        review_info = []
+        for container in info_containers:
+            review_info.append(str(container.find('span').contents[0]).lower())
+
+        try:
+            self.price_index = review_info.index('price')
+        except ValueError:
+            self.price_index = None
+        try:
+            self.designation_index = review_info.index('designation')
+        except ValueError:
+            self.designation_index = None
+        try:
+            self.variety_index = review_info.index('variety')
+        except ValueError:
+            self.variety_index = None
+        try:
+            self.appellation_index = review_info.index('appellation')
+        except ValueError:
+            self.appellation_index = None
+        try:
+            self.winery_index = review_info.index('winery')
+        except ValueError:
+            self.winery_index = None
+
+        # The appellation format is changes based on where in the world the winery is located
+        if self.appellation_index is not None:
+            appellation_info = info_containers[self.appellation_index].find('div', {'class': 'info'}).span.findChildren()
+            if len(appellation_info) == 3:
+                self.appellation_format = APPELLATION_FORMAT_1
+            elif len(appellation_info) == 4:
+                self.appellation_format = APPELLATION_FORMAT_2
+            else:
+                self.appellation_format = UNKNOWN_FORMAT
 
 
 class ReviewFormatException(Exception):
