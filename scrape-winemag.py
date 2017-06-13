@@ -11,6 +11,10 @@ HEADERS = {
                    '(KHTML, like Gecko) Chrome/48.0.2564.109 Safari/537.36')
 }
 
+UNKNOWN_FORMAT = 0
+APPELLATION_FORMAT_1 = 1
+APPELLATION_FORMAT_2 = 2
+
 
 class Scraper():
     """Scraper for Winemag.com to collect wine reviews"""
@@ -18,6 +22,7 @@ class Scraper():
     def __init__(self):
         self.session = requests.Session()
         self.data = []
+        self.appellation_format = UNKNOWN_FORMAT
 
     def scrape_site(self, num_pages_to_scrape):
         for page in range(1, num_pages_to_scrape):
@@ -35,7 +40,14 @@ class Scraper():
         review_url = review.find('a', {'class': 'review-listing'})['href']
         review_response = self.session.get(review_url, headers=HEADERS)
         review_soup = BeautifulSoup(review_response.content, 'html.parser')
-        self.parse_review(review_soup)
+        self.determine_review_format(review_soup)
+        try:
+            self.parse_review(review_soup)
+        except ReviewFormatException as e:
+            print('-----\nError parsing: {}\n{}\n-----'.format(
+                review_url,
+                e.message
+            ))
 
     def parse_review(self, review_soup):
         points = review_soup.find("span", {"id": "points"}).contents[0]
@@ -53,11 +65,18 @@ class Scraper():
             'div', {'class': 'info'}).span.findChildren()[0].contents[0]
 
         appellation_info = info_containers[3].find('div', {'class': 'info'}).span.findChildren()
-
-        region_1 = appellation_info[0].contents[0]
-        region_2 = appellation_info[1].contents[0]
-        province = appellation_info[2].contents[0]
-        country = appellation_info[3].contents[0]
+        if self.appellation_format == APPELLATION_FORMAT_1:
+            region_1 = appellation_info[0].contents[0]
+            region_2 = None
+            province = appellation_info[1].contents[0]
+            country = appellation_info[1].contents[0]
+        elif self.appellation_format == APPELLATION_FORMAT_2:
+            region_1 = appellation_info[0].contents[0]
+            region_2 = appellation_info[1].contents[0]
+            province = appellation_info[2].contents[0]
+            country = appellation_info[3].contents[0]
+        else:
+            raise ReviewFormatException('Unknown appellation format')
 
         winery = info_containers[4].find(
             'div', {'class': 'info'}).span.span.findChildren()[0].contents[0]
@@ -75,6 +94,25 @@ class Scraper():
             'winery': winery
         }
         self.data.append(review_data)
+
+    def determine_review_format(self, review_soup):
+        # The appellation format is changes based on where in the world the winery is located
+        info_containers = review_soup.find(
+            'ul', {'class': 'primary-info'}).find_all('li', {'class': 'row'})
+        appellation_info = info_containers[3].find('div', {'class': 'info'}).span.findChildren()
+        if len(appellation_info) == 3:
+            self.appellation_format = APPELLATION_FORMAT_1
+        elif len(appellation_info) == 4:
+            self.appellation_format = APPELLATION_FORMAT_2
+        else:
+            self.appellation_format = UNKNOWN_FORMAT
+
+
+class ReviewFormatException(Exception):
+    """Exception when the format of a review page is not understood by the scraper"""
+    def __init__(self, message):
+        self.message = message
+        super(Exception, self).__init__(message)
 
 
 if __name__ == '__main__':
