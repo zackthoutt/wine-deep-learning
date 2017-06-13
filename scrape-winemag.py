@@ -18,10 +18,19 @@ class Scraper():
     def __init__(self):
         self.session = requests.Session()
 
-    def scrape_site(self):
-        response = self.session.get(BASE_URL.format(1), headers=HEADERS)
+    def scrape_site(self, num_pages_to_scrape):
+        for page in range(1, num_pages_to_scrape):
+            self.scrape_page(page)
+
+    def scrape_page(self, page):
+        response = self.session.get(BASE_URL.format(page), headers=HEADERS)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        # Drop the first review-item; it's always empty
+        reviews = soup.find_all('li', {'class': 'review-item'})[1:]
 
 
 if __name__ == '__main__':
     winmag_scraper = Scraper()
-    winmag_scraper.scrape_site()
+    # Total review results on their site are conflicting, hardcode as the max tested value for now
+    num_pages_to_scrape = 7071
+    winmag_scraper.scrape_site(num_pages_to_scrape)
