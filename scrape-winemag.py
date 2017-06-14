@@ -1,4 +1,6 @@
 from bs4 import BeautifulSoup
+import sys
+import time
 import requests
 import re
 import json
@@ -24,8 +26,13 @@ class Scraper():
         self.session = requests.Session()
         self.data = []
         self.appellation_format = UNKNOWN_FORMAT
+        self.start_time = 0
+        self.current_review = 0
 
     def scrape_site(self, num_pages_to_scrape):
+        self.start_time = time.time()
+        # There are up to 30 reviews per page
+        self.estimated_total_reviews = 7170 * 30
         for page in range(1, num_pages_to_scrape):
             self.scrape_page(page)
         self.save_data()
@@ -36,7 +43,9 @@ class Scraper():
         # Drop the first review-item; it's always empty
         reviews = soup.find_all('li', {'class': 'review-item'})[1:]
         for review in reviews:
+            self.current_review += 1
             self.scrape_review(review)
+            self.update_scrape_status()
 
     def scrape_review(self, review):
         review_url = review.find('a', {'class': 'review-listing'})['href']
@@ -46,7 +55,7 @@ class Scraper():
         try:
             self.parse_review(review_soup)
         except ReviewFormatException as e:
-            print('-----\nError parsing: {}\n{}\n-----'.format(
+            print('\n-----\nError parsing: {}\n{}\n-----'.format(
                 review_url,
                 e.message
             ))
@@ -97,7 +106,7 @@ class Scraper():
             country = None
 
         if self.winery_index is not None:
-            winery = info_containers[4].find(
+            winery = info_containers[self.winery_index].find(
                 'div', {'class': 'info'}).span.span.findChildren()[0].contents[0]
         else:
             winery = None
@@ -158,6 +167,11 @@ class Scraper():
     def save_data(self):
         with open('winmag-reviews.json', 'w') as fout:
             json.dump(data, fout)
+
+    def update_scrape_status(self):
+        elapsed_time = round(time.time() - self.start_time, 2)
+        print('{0}/{1} reviews | {2} sec elapsed\r'.format(
+            self.current_review, self.estimated_total_reviews, elapsed_time), end='')
 
 
 class ReviewFormatException(Exception):
