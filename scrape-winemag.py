@@ -37,7 +37,7 @@ class Scraper():
 
         if num_jobs > 1:
             self.multiprocessing = True
-            self.worker_pool = Pool(10)
+            self.worker_pool = Pool(num_jobs)
         else:
             self.multiprocessing = False
 
@@ -65,7 +65,6 @@ class Scraper():
     def scrape_review(self, review_url):
         review_response = self.session.get(review_url, headers=HEADERS)
         review_soup = BeautifulSoup(review_response.content, 'html.parser')
-        self.determine_review_format(review_soup)
         try:
             self.parse_review(review_soup)
         except ReviewFormatException as e:
@@ -75,15 +74,16 @@ class Scraper():
             ))
 
     def parse_review(self, review_soup):
+        review_format = self.determine_review_format(review_soup)
         points = review_soup.find("span", {"id": "points"}).contents[0]
         description = review_soup.find("p", {"class": "description"}).contents[0]
 
         info_containers = review_soup.find(
             'ul', {'class': 'primary-info'}).find_all('li', {'class': 'row'})
 
-        if self.price_index is not None:
+        if review_format['price_index'] is not None:
             try:
-                price_string = info_containers[self.price_index].find(
+                price_string = info_containers[review_format['price_index']].find(
                     'div', {'class': 'info'}).span.span.contents[0].split(',')[0]
             except:
                 raise ReviewFormatException('Unexpected price format')
@@ -95,37 +95,37 @@ class Scraper():
         else:
             price = None
 
-        if self.designation_index is not None:
+        if review_format['designation_index'] is not None:
             try:
-                designation = info_containers[self.designation_index].find('div', {'class': 'info'}).span.span.contents[0]
+                designation = info_containers[review_format['designation_index']].find('div', {'class': 'info'}).span.span.contents[0]
             except:
                 raise ReviewFormatException('Unexpected designation format')
         else:
             designation = None
 
-        if self.variety_index is not None:
+        if review_format['variety_index'] is not None:
             try:
-                variety = info_containers[self.variety_index].find(
+                variety = info_containers[review_format['variety_index']].find(
                     'div', {'class': 'info'}).span.findChildren()[0].contents[0]
             except:
                 raise ReviewFormatException('Unexpected variety format')
         else:
             variety = None
 
-        if self.appellation_index is not None:
-            appellation_info = info_containers[self.appellation_index].find('div', {'class': 'info'}).span.findChildren()
+        if review_format['appellation_index'] is not None:
+            appellation_info = info_containers[review_format['appellation_index']].find('div', {'class': 'info'}).span.findChildren()
             try:
-                if self.appellation_format == APPELLATION_FORMAT_0:
+                if review_format['appellation_format'] == APPELLATION_FORMAT_0:
                     region_1 = None
                     region_2 = None
                     province = appellation_info[0].contents[0]
                     country = appellation_info[1].contents[0]
-                elif self.appellation_format == APPELLATION_FORMAT_1:
+                elif review_format['appellation_format'] == APPELLATION_FORMAT_1:
                     region_1 = appellation_info[0].contents[0]
                     region_2 = None
                     province = appellation_info[1].contents[0]
                     country = appellation_info[2].contents[0]
-                elif self.appellation_format == APPELLATION_FORMAT_2:
+                elif review_format['appellation_format'] == APPELLATION_FORMAT_2:
                     region_1 = appellation_info[0].contents[0]
                     region_2 = appellation_info[1].contents[0]
                     province = appellation_info[2].contents[0]
@@ -143,9 +143,9 @@ class Scraper():
             province = None
             country = None
 
-        if self.winery_index is not None:
+        if review_format['winery_index'] is not None:
             try:
-                winery = info_containers[self.winery_index].find(
+                winery = info_containers[review_format['winery_index']].find(
                     'div', {'class': 'info'}).span.span.findChildren()[0].contents[0]
             except:
                 raise ReviewFormatException('Unexpected winery format')
@@ -167,6 +167,7 @@ class Scraper():
         self.data.append(review_data)
 
     def determine_review_format(self, review_soup):
+        review_format = {}
         info_containers = review_soup.find(
             'ul', {'class': 'primary-info'}).find_all('li', {'class': 'row'})
 
@@ -175,37 +176,39 @@ class Scraper():
             review_info.append(str(container.find('span').contents[0]).lower())
 
         try:
-            self.price_index = review_info.index('price')
+            review_format['price_index'] = review_info.index('price')
         except ValueError:
-            self.price_index = None
+            review_format['price_index'] = None
         try:
-            self.designation_index = review_info.index('designation')
+            review_format['designation_index'] = review_info.index('designation')
         except ValueError:
-            self.designation_index = None
+            review_format['designation_index'] = None
         try:
-            self.variety_index = review_info.index('variety')
+            review_format['variety_index'] = review_info.index('variety')
         except ValueError:
-            self.variety_index = None
+            review_format['variety_index'] = None
         try:
-            self.appellation_index = review_info.index('appellation')
+            review_format['appellation_index'] = review_info.index('appellation')
         except ValueError:
-            self.appellation_index = None
+            review_format['appellation_index'] = None
         try:
-            self.winery_index = review_info.index('winery')
+            review_format['winery_index'] = review_info.index('winery')
         except ValueError:
-            self.winery_index = None
+            review_format['winery_index'] = None
 
         # The appellation format changes based on where in the world the winery is located
-        if self.appellation_index is not None:
-            appellation_info = info_containers[self.appellation_index].find('div', {'class': 'info'}).span.findChildren()
+        if review_format['appellation_index'] is not None:
+            appellation_info = info_containers[review_format['appellation_index']].find('div', {'class': 'info'}).span.findChildren()
             if len(appellation_info) == 2:
-                self.appellation_format = APPELLATION_FORMAT_0
+                review_format['appellation_format'] = APPELLATION_FORMAT_0
             elif len(appellation_info) == 3:
-                self.appellation_format = APPELLATION_FORMAT_1
+                review_format['appellation_format'] = APPELLATION_FORMAT_1
             elif len(appellation_info) == 4:
-                self.appellation_format = APPELLATION_FORMAT_2
+                review_format['appellation_format'] = APPELLATION_FORMAT_2
             else:
-                self.appellation_format = UNKNOWN_FORMAT
+                review_format['appellation_format'] = UNKNOWN_FORMAT
+
+        return review_format
 
     def save_data(self):
         with open('winmag-reviews.json', 'w') as fout:
@@ -230,10 +233,6 @@ if __name__ == '__main__':
     num_pages_to_scrape = 5
     winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10)
 
-    # winmag_scraper.scrape_site()
-    # winmag_scraper.save_data()
-
-    winmag_scraper.scrape_review('http://www.winemag.com/buying-guide/vina-cobos-2014-bramare-malbec-valle-de-uco')
-
-
+    winmag_scraper.scrape_site()
+    winmag_scraper.save_data()
 
