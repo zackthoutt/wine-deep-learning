@@ -213,8 +213,9 @@ class Scraper():
 
     def update_scrape_status(self):
         elapsed_time = round(time.time() - self.start_time, 2)
-        print('{0}/{1} reviews | {2} sec elapsed\r'.format(
-            self.current_review, self.estimated_total_reviews, elapsed_time), end='')
+        time_remaining = round((self.estimated_total_reviews / self.current_review) * elapsed_time, 2)
+        print('{0}/{1} reviews | {2} sec elapsed | {3} sec remaining\r'.format(
+            self.current_review, self.estimated_total_reviews, elapsed_time, time_remaining), end='')
 
 
 class ReviewFormatException(Exception):
@@ -226,7 +227,7 @@ class ReviewFormatException(Exception):
 
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
-    num_pages_to_scrape = 10
+    num_pages_to_scrape = 5
     winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10)
 
     winmag_scraper.scrape_site()
