@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import re
+import json
 import numpy as np
 
 
@@ -27,6 +28,7 @@ class Scraper():
     def scrape_site(self, num_pages_to_scrape):
         for page in range(1, num_pages_to_scrape):
             self.scrape_page(page)
+        self.save_data()
 
     def scrape_page(self, page):
         response = self.session.get(BASE_URL.format(page), headers=HEADERS)
@@ -152,6 +154,10 @@ class Scraper():
                 self.appellation_format = APPELLATION_FORMAT_2
             else:
                 self.appellation_format = UNKNOWN_FORMAT
+
+    def save_data(self):
+        with open('winmag-reviews.json', 'w') as fout:
+            json.dump(data, fout)
 
 
 class ReviewFormatException(Exception):
