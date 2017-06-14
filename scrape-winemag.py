@@ -68,8 +68,11 @@ class Scraper():
             'ul', {'class': 'primary-info'}).find_all('li', {'class': 'row'})
 
         if self.price_index is not None:
-            price_string = info_containers[self.price_index].find(
-                'div', {'class': 'info'}).span.span.contents[0].split(',')[0]
+            try:
+                price_string = info_containers[self.price_index].find(
+                    'div', {'class': 'info'}).span.span.contents[0].split(',')[0]
+            except:
+                raise ReviewFormatException('Unexpected price format')
             # Sometimes price is N/A
             try:
                 price = int(re.sub('[$]', '', price_string))
@@ -79,13 +82,19 @@ class Scraper():
             price = None
 
         if self.designation_index is not None:
-            designation = info_containers[self.designation_index].find('div', {'class': 'info'}).span.span.contents[0]
+            try:
+                designation = info_containers[self.designation_index].find('div', {'class': 'info'}).span.span.contents[0]
+            except:
+                raise ReviewFormatException('Unexpected designation format')
         else:
             designation = None
 
         if self.variety_index is not None:
-            variety = info_containers[self.variety_index].find(
-                'div', {'class': 'info'}).span.findChildren()[0].contents[0]
+            try:
+                variety = info_containers[self.variety_index].find(
+                    'div', {'class': 'info'}).span.findChildren()[0].contents[0]
+            except:
+                raise ReviewFormatException('Unexpected variety format')
         else:
             variety = None
 
@@ -110,8 +119,11 @@ class Scraper():
             country = None
 
         if self.winery_index is not None:
-            winery = info_containers[self.winery_index].find(
-                'div', {'class': 'info'}).span.span.findChildren()[0].contents[0]
+            try:
+                winery = info_containers[self.winery_index].find(
+                    'div', {'class': 'info'}).span.span.findChildren()[0].contents[0]
+            except:
+                raise ReviewFormatException('Unexpected winery format')
         else:
             winery = None
 
