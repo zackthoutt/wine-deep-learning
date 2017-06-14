@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 from multiprocessing.dummy import Pool
 from multiprocessing import cpu_count
 import sys
+import os
 import time
 import requests
 import re
@@ -25,9 +26,10 @@ APPELLATION_FORMAT_2 = 3
 class Scraper():
     """Scraper for Winemag.com to collect wine reviews"""
 
-    def __init__(self, num_pages_to_scrape, num_jobs=1):
+    def __init__(self, num_pages_to_scrape, num_jobs=1, save_frequency=1000):
         self.num_pages_to_scrape = num_pages_to_scrape
         self.num_jobs = num_jobs
+        self.save_frequency = save_frequency
         self.session = requests.Session()
         self.data = []
         self.appellation_format = UNKNOWN_FORMAT
@@ -50,6 +52,7 @@ class Scraper():
         else:
             for page in range(1, self.num_pages_to_scrape):
                 self.scrape_page(BASE_URL.format(page))
+        self.save_data()
 
     def scrape_page(self, page_url):
         response = self.session.get(page_url, headers=HEADERS)
@@ -61,6 +64,8 @@ class Scraper():
             review_url = review.find('a', {'class': 'review-listing'})['href']
             self.scrape_review(review_url)
             self.update_scrape_status()
+            if self.current_review % self.save_frequency == 0:
+                self.save_data()
 
     def scrape_review(self, review_url):
         review_response = self.session.get(review_url, headers=HEADERS)
@@ -211,7 +216,8 @@ class Scraper():
         return review_format
 
     def save_data(self):
-        with open('winmag-reviews.json', 'w') as fout:
+        filename = 'winmag-reviews.json'
+        with open(filename, 'w') as fout:
             json.dump(self.data, fout)
 
     def update_scrape_status(self):
@@ -230,9 +236,8 @@ class ReviewFormatException(Exception):
 
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
-    num_pages_to_scrape = 5
+    num_pages_to_scrape = 7071
     winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10)
 
     winmag_scraper.scrape_site()
-    winmag_scraper.save_data()
 
