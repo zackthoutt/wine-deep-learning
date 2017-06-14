@@ -25,9 +25,9 @@ APPELLATION_FORMAT_2 = 3
 class Scraper():
     """Scraper for Winemag.com to collect wine reviews"""
 
-    def __init__(self, num_pages_to_scrape, multiprocessing=False):
+    def __init__(self, num_pages_to_scrape, num_jobs=1):
         self.num_pages_to_scrape = num_pages_to_scrape
-        self.multiprocessing = multiprocessing
+        self.num_jobs = num_jobs
         self.session = requests.Session()
         self.data = []
         self.appellation_format = UNKNOWN_FORMAT
@@ -35,10 +35,21 @@ class Scraper():
         self.current_review = 0
         self.estimated_total_reviews = num_pages_to_scrape * 30
 
+        if num_jobs > 1:
+            self.multiprocessing = True
+            self.worker_pool = Pool(10)
+        else:
+            self.multiprocessing = False
+
     def scrape_site(self):
-        # There are up to 30 reviews per page
-        for page in range(1, self.num_pages_to_scrape):
-            self.scrape_page(BASE_URL.format(page))
+        if self.multiprocessing:
+            link_list = [BASE_URL.format(page) for page in range(1,self.num_pages_to_scrape)]
+            records = self.worker_pool.map(self.scrape_page, link_list)
+            self.worker_pool.terminate()
+            self.worker_pool.join()
+        else:
+            for page in range(1, self.num_pages_to_scrape):
+                self.scrape_page(BASE_URL.format(page))
 
     def scrape_page(self, page_url):
         response = self.session.get(page_url, headers=HEADERS)
@@ -216,14 +227,9 @@ class ReviewFormatException(Exception):
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
     num_pages_to_scrape = 10
-    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, multiprocessing=True)
+    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10)
 
-    link_list = [BASE_URL.format(page) for page in range(1,num_pages_to_scrape)]
-    p = Pool(10)
-    records = p.map(winmag_scraper.scrape_page, link_list)
-    p.terminate()
-    p.join()
-
+    winmag_scraper.scrape_site()
     winmag_scraper.save_data()
 
 
