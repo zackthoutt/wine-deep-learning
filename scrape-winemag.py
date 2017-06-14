@@ -1,14 +1,11 @@
 from bs4 import BeautifulSoup
 from multiprocessing.dummy import Pool
-from multiprocessing import cpu_count
-import sys
 import os
 import time
 import requests
 import re
 import json
 import glob
-import numpy as np
 
 
 BASE_URL = 'http://www.winemag.com/?s=&drink_type=wine&page={0}'
