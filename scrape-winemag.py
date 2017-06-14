@@ -34,7 +34,7 @@ class Scraper():
         self.data = []
         self.appellation_format = UNKNOWN_FORMAT
         self.start_time = time.time()
-        self.current_review = 0
+        self.cross_process_review_count = 0
         self.current_file = 0
         self.estimated_total_reviews = num_pages_to_scrape * 30
 
@@ -53,26 +53,28 @@ class Scraper():
         else:
             for page in range(1, self.num_pages_to_scrape):
                 self.scrape_page(BASE_URL.format(page))
-        self.save_data()
 
-    def scrape_page(self, page_url):
+    def scrape_page(self, page_url, isolated_review_count=0):
+        scrape_data = []
         response = self.session.get(page_url, headers=HEADERS)
         soup = BeautifulSoup(response.content, 'html.parser')
         # Drop the first review-item; it's always empty
         reviews = soup.find_all('li', {'class': 'review-item'})[1:]
         for review in reviews:
-            self.current_review += 1
+            self.cross_process_review_count += 1
+            isolated_review_count += 1
             review_url = review.find('a', {'class': 'review-listing'})['href']
-            self.scrape_review(review_url)
+            review_data = self.scrape_review(review_url)
+            scrape_data.append(review_data)
             self.update_scrape_status()
-            if self.current_review % self.save_frequency == 0:
-                self.save_data()
+        self.save_data(scrape_data)
+
 
     def scrape_review(self, review_url):
         review_response = self.session.get(review_url, headers=HEADERS)
         review_soup = BeautifulSoup(review_response.content, 'html.parser')
         try:
-            self.parse_review(review_soup)
+            return self.parse_review(review_soup)
         except ReviewFormatException as e:
             print('\n-----\nError parsing: {}\n{}\n-----'.format(
                 review_url,
@@ -170,7 +172,7 @@ class Scraper():
             'country': country,
             'winery': winery
         }
-        self.data.append(review_data)
+        return review_data
 
     def determine_review_format(self, review_soup):
         review_format = {}
@@ -216,21 +218,20 @@ class Scraper():
 
         return review_format
 
-    def save_data(self):
+    def save_data(self, data):
         filename = 'data/winmag-reviews_{}.json'.format(time.time())
         try:
             os.makedirs('data')
         except OSError:
             pass
         with open(filename, 'w') as fout:
-            json.dump(self.data, fout)
-        self.data = []
+            json.dump(data, fout)
 
     def update_scrape_status(self):
         elapsed_time = round(time.time() - self.start_time, 2)
-        time_remaining = round((self.estimated_total_reviews / self.current_review) * elapsed_time, 2)
+        time_remaining = round((self.estimated_total_reviews / self.cross_process_review_count) * elapsed_time, 2)
         print('{0}/{1} reviews | {2} sec elapsed | {3} sec remaining\r'.format(
-            self.current_review, self.estimated_total_reviews, elapsed_time, time_remaining), end='')
+            self.cross_process_review_count, self.estimated_total_reviews, elapsed_time, time_remaining), end='')
 
 
 class ReviewFormatException(Exception):
