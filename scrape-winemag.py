@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from multiprocessing.dummy import Pool
 import os
+import shutil
 import time
 import requests
 import re
@@ -15,6 +16,7 @@ HEADERS = {
                    '(KHTML, like Gecko) Chrome/48.0.2564.109 Safari/537.36')
 }
 DATA_DIR = 'data'
+FILENAME = 'winemag-data'
 
 UNKNOWN_FORMAT = 0
 APPELLATION_FORMAT_0 = 1
@@ -40,6 +42,7 @@ class Scraper():
             self.multiprocessing = False
 
     def scrape_site(self):
+        self.clear_all_data()
         if self.multiprocessing:
             link_list = [BASE_URL.format(page) for page in range(1,self.num_pages_to_scrape)]
             records = self.worker_pool.map(self.scrape_page, link_list)
@@ -216,13 +219,29 @@ class Scraper():
         return review_format
 
     def save_data(self, data):
-        filename = '{}/winmag-reviews_{}.json'.format(DATA_DIR, time.time())
+        filename = '{}/{}_{}.json'.format(DATA_DIR, FILENAME, time.time())
         try:
             os.makedirs(DATA_DIR)
         except OSError:
             pass
         with open(filename, 'w') as fout:
             json.dump(data, fout)
+
+    def clear_all_data(self):
+        self.clear_data_dir()
+        self.clear_output_data()
+
+    def clear_data_dir(self):
+        try:
+            shutil.rmtree(DATA_DIR)
+        except FileNotFoundError:
+            pass
+
+    def clear_output_data(self):
+        try:
+            os.remove('{}.json'.format(FILENAME))
+        except FileNotFoundError:
+            pass
 
     def condense_data(self):
         print('Condensing Data...')
@@ -232,7 +251,8 @@ class Scraper():
             with open(file, 'rb') as fin:
                 condensed_data += json.load(fin)
 
-        with open('winemag-data.json', 'w') as fout:
+        filename = '{}.json'.format(FILENAME)
+        with open(filename, 'w') as fout:
             json.dump(condensed_data, fout)
 
     def update_scrape_status(self):
