@@ -58,11 +58,11 @@ class Scraper():
         reviews = soup.find_all('li', {'class': 'review-item'})[1:]
         for review in reviews:
             self.current_review += 1
-            self.scrape_review(review)
+            review_url = review.find('a', {'class': 'review-listing'})['href']
+            self.scrape_review(review_url)
             self.update_scrape_status()
 
-    def scrape_review(self, review):
-        review_url = review.find('a', {'class': 'review-listing'})['href']
+    def scrape_review(self, review_url):
         review_response = self.session.get(review_url, headers=HEADERS)
         review_soup = BeautifulSoup(review_response.content, 'html.parser')
         self.determine_review_format(review_soup)
@@ -230,8 +230,10 @@ if __name__ == '__main__':
     num_pages_to_scrape = 5
     winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10)
 
-    winmag_scraper.scrape_site()
-    winmag_scraper.save_data()
+    # winmag_scraper.scrape_site()
+    # winmag_scraper.save_data()
+
+    winmag_scraper.scrape_review('http://www.winemag.com/buying-guide/vina-cobos-2014-bramare-malbec-valle-de-uco')
 
 
 
