@@ -25,16 +25,12 @@ APPELLATION_FORMAT_2 = 3
 class Scraper():
     """Scraper for Winemag.com to collect wine reviews"""
 
-    def __init__(self, num_pages_to_scrape, num_jobs=1, save_frequency=1000):
+    def __init__(self, num_pages_to_scrape, num_jobs=1):
         self.num_pages_to_scrape = num_pages_to_scrape
         self.num_jobs = num_jobs
-        self.save_frequency = save_frequency
         self.session = requests.Session()
-        self.data = []
-        self.appellation_format = UNKNOWN_FORMAT
         self.start_time = time.time()
         self.cross_process_review_count = 0
-        self.current_file = 0
         self.estimated_total_reviews = num_pages_to_scrape * 30
 
         if num_jobs > 1:
@@ -255,8 +251,8 @@ class ReviewFormatException(Exception):
 
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
-    num_pages_to_scrape = 4
-    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10, save_frequency=10)
+    num_pages_to_scrape = 7071
+    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10)
 
     winmag_scraper.scrape_site()
 
