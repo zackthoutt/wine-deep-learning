@@ -70,7 +70,11 @@ class Scraper():
         if self.price_index is not None:
             price_string = info_containers[self.price_index].find(
                 'div', {'class': 'info'}).span.span.contents[0].split(',')[0]
-            price = int(re.sub('[$]', '', price_string))
+            # Sometimes price is N/A
+            try:
+                price = int(re.sub('[$]', '', price_string))
+            except ValueError:
+                price = None
         else:
             price = None
 
