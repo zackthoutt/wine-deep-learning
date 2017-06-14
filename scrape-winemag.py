@@ -7,6 +7,7 @@ import time
 import requests
 import re
 import json
+import glob
 import numpy as np
 
 
@@ -16,6 +17,7 @@ HEADERS = {
     'user-agent': ('Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 '
                    '(KHTML, like Gecko) Chrome/48.0.2564.109 Safari/537.36')
 }
+DATA_DIR = 'data'
 
 UNKNOWN_FORMAT = 0
 APPELLATION_FORMAT_0 = 1
@@ -53,6 +55,8 @@ class Scraper():
         else:
             for page in range(1, self.num_pages_to_scrape):
                 self.scrape_page(BASE_URL.format(page))
+        print('Scrape finished...')
+        self.condense_data()
 
     def scrape_page(self, page_url, isolated_review_count=0):
         scrape_data = []
@@ -219,13 +223,24 @@ class Scraper():
         return review_format
 
     def save_data(self, data):
-        filename = 'data/winmag-reviews_{}.json'.format(time.time())
+        filename = '{}/winmag-reviews_{}.json'.format(DATA_DIR, time.time())
         try:
-            os.makedirs('data')
+            os.makedirs(DATA_DIR)
         except OSError:
             pass
         with open(filename, 'w') as fout:
             json.dump(data, fout)
+
+    def condense_data(self):
+        print('Condensing Data...')
+        condensed_data = []
+        all_files = glob.glob('{}/*.json'.format(DATA_DIR))
+        for file in all_files:
+            with open(file, 'rb') as fin:
+                condensed_data += json.load(fin)
+
+        with open('winemag-data.json', 'w') as fout:
+            json.dump(condensed_data, fout)
 
     def update_scrape_status(self):
         elapsed_time = round(time.time() - self.start_time, 2)
@@ -243,7 +258,7 @@ class ReviewFormatException(Exception):
 
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
-    num_pages_to_scrape = 7071
+    num_pages_to_scrape = 4
     winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10, save_frequency=10)
 
     winmag_scraper.scrape_site()
