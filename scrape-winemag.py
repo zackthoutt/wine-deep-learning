@@ -1,4 +1,6 @@
 from bs4 import BeautifulSoup
+from multiprocessing.dummy import Pool
+from multiprocessing import cpu_count
 import sys
 import time
 import requests
@@ -15,30 +17,31 @@ HEADERS = {
 }
 
 UNKNOWN_FORMAT = 0
-APPELLATION_FORMAT_1 = 1
-APPELLATION_FORMAT_2 = 2
+APPELLATION_FORMAT_0 = 1
+APPELLATION_FORMAT_1 = 2
+APPELLATION_FORMAT_2 = 3
 
 
 class Scraper():
     """Scraper for Winemag.com to collect wine reviews"""
 
-    def __init__(self):
+    def __init__(self, num_pages_to_scrape, multiprocessing=False):
+        self.num_pages_to_scrape = num_pages_to_scrape
+        self.multiprocessing = multiprocessing
         self.session = requests.Session()
         self.data = []
         self.appellation_format = UNKNOWN_FORMAT
-        self.start_time = 0
-        self.current_review = 0
-
-    def scrape_site(self, num_pages_to_scrape):
         self.start_time = time.time()
-        # There are up to 30 reviews per page
-        self.estimated_total_reviews = 7170 * 30
-        for page in range(1, num_pages_to_scrape):
-            self.scrape_page(page)
-        self.save_data()
+        self.current_review = 0
+        self.estimated_total_reviews = num_pages_to_scrape * 30
 
-    def scrape_page(self, page):
-        response = self.session.get(BASE_URL.format(page), headers=HEADERS)
+    def scrape_site(self):
+        # There are up to 30 reviews per page
+        for page in range(1, self.num_pages_to_scrape):
+            self.scrape_page(BASE_URL.format(page))
+
+    def scrape_page(self, page_url):
+        response = self.session.get(page_url, headers=HEADERS)
         soup = BeautifulSoup(response.content, 'html.parser')
         # Drop the first review-item; it's always empty
         reviews = soup.find_all('li', {'class': 'review-item'})[1:]
@@ -100,17 +103,28 @@ class Scraper():
 
         if self.appellation_index is not None:
             appellation_info = info_containers[self.appellation_index].find('div', {'class': 'info'}).span.findChildren()
-            if self.appellation_format == APPELLATION_FORMAT_1:
-                region_1 = appellation_info[0].contents[0]
-                region_2 = None
-                province = appellation_info[1].contents[0]
-                country = appellation_info[1].contents[0]
-            elif self.appellation_format == APPELLATION_FORMAT_2:
-                region_1 = appellation_info[0].contents[0]
-                region_2 = appellation_info[1].contents[0]
-                province = appellation_info[2].contents[0]
-                country = appellation_info[3].contents[0]
-            else:
+            try:
+                if self.appellation_format == APPELLATION_FORMAT_0:
+                    region_1 = None
+                    region_2 = None
+                    province = appellation_info[0].contents[0]
+                    country = appellation_info[1].contents[0]
+                elif self.appellation_format == APPELLATION_FORMAT_1:
+                    region_1 = appellation_info[0].contents[0]
+                    region_2 = None
+                    province = appellation_info[1].contents[0]
+                    country = appellation_info[2].contents[0]
+                elif self.appellation_format == APPELLATION_FORMAT_2:
+                    region_1 = appellation_info[0].contents[0]
+                    region_2 = appellation_info[1].contents[0]
+                    province = appellation_info[2].contents[0]
+                    country = appellation_info[3].contents[0]
+                else:
+                    region_1 = None
+                    region_2 = None
+                    province = None
+                    country = None
+            except:
                 raise ReviewFormatException('Unknown appellation format')
         else:
             region_1 = None
@@ -170,10 +184,12 @@ class Scraper():
         except ValueError:
             self.winery_index = None
 
-        # The appellation format is changes based on where in the world the winery is located
+        # The appellation format changes based on where in the world the winery is located
         if self.appellation_index is not None:
             appellation_info = info_containers[self.appellation_index].find('div', {'class': 'info'}).span.findChildren()
-            if len(appellation_info) == 3:
+            if len(appellation_info) == 2:
+                self.appellation_format = APPELLATION_FORMAT_0
+            elif len(appellation_info) == 3:
                 self.appellation_format = APPELLATION_FORMAT_1
             elif len(appellation_info) == 4:
                 self.appellation_format = APPELLATION_FORMAT_2
@@ -182,7 +198,7 @@ class Scraper():
 
     def save_data(self):
         with open('winmag-reviews.json', 'w') as fout:
-            json.dump(data, fout)
+            json.dump(self.data, fout)
 
     def update_scrape_status(self):
         elapsed_time = round(time.time() - self.start_time, 2)
@@ -198,7 +214,17 @@ class ReviewFormatException(Exception):
 
 
 if __name__ == '__main__':
-    winmag_scraper = Scraper()
     # Total review results on their site are conflicting, hardcode as the max tested value for now
-    num_pages_to_scrape = 7071
-    winmag_scraper.scrape_site(num_pages_to_scrape)
+    num_pages_to_scrape = 10
+    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, multiprocessing=True)
+
+    link_list = [BASE_URL.format(page) for page in range(1,num_pages_to_scrape)]
+    p = Pool(10)
+    records = p.map(winmag_scraper.scrape_page, link_list)
+    p.terminate()
+    p.join()
+
+    winmag_scraper.save_data()
+
+
+
