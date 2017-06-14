@@ -8,3 +8,7 @@
 
 # OSX
 .DS_Store
+
+# Data output
+data/
+winmag-data.json
