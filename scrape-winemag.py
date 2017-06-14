@@ -35,6 +35,7 @@ class Scraper():
         self.appellation_format = UNKNOWN_FORMAT
         self.start_time = time.time()
         self.current_review = 0
+        self.current_file = 0
         self.estimated_total_reviews = num_pages_to_scrape * 30
 
         if num_jobs > 1:
@@ -216,9 +217,14 @@ class Scraper():
         return review_format
 
     def save_data(self):
-        filename = 'winmag-reviews.json'
+        filename = 'data/winmag-reviews_{}.json'.format(time.time())
+        try:
+            os.makedirs('data')
+        except OSError:
+            pass
         with open(filename, 'w') as fout:
             json.dump(self.data, fout)
+        self.data = []
 
     def update_scrape_status(self):
         elapsed_time = round(time.time() - self.start_time, 2)
@@ -237,7 +243,7 @@ class ReviewFormatException(Exception):
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
     num_pages_to_scrape = 7071
-    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10)
+    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10, save_frequency=10)
 
     winmag_scraper.scrape_site()
 
