@@ -27,9 +27,10 @@ APPELLATION_FORMAT_2 = 3
 class Scraper():
     """Scraper for Winemag.com to collect wine reviews"""
 
-    def __init__(self, pages_to_scrape=(1,1), num_jobs=1):
+    def __init__(self, pages_to_scrape=(1,1), num_jobs=1, clear_old_data=True):
         self.pages_to_scrape = pages_to_scrape
         self.num_jobs = num_jobs
+        self.clear_old_data = clear_old_data
         self.session = requests.Session()
         self.start_time = time.time()
         self.cross_process_review_count = 0
@@ -42,7 +43,8 @@ class Scraper():
             self.multiprocessing = False
 
     def scrape_site(self):
-        self.clear_all_data()
+        if self.clear_old_data:
+            self.clear_data_dir()
         if self.multiprocessing:
             link_list = [BASE_URL.format(page) for page in range(self.pages_to_scrape[0],self.pages_to_scrape[1])]
             records = self.worker_pool.map(self.scrape_page, link_list)
@@ -272,7 +274,7 @@ class ReviewFormatException(Exception):
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
     pages_to_scrape = (27151, 50000)
-    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10)
+    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10, clear_old_data=False)
 
     winmag_scraper.condense_data()
 
