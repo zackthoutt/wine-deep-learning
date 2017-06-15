@@ -27,13 +27,13 @@ APPELLATION_FORMAT_2 = 3
 class Scraper():
     """Scraper for Winemag.com to collect wine reviews"""
 
-    def __init__(self, num_pages_to_scrape, num_jobs=1):
-        self.num_pages_to_scrape = num_pages_to_scrape
+    def __init__(self, pages_to_scrape=(1,1), num_jobs=1):
+        self.pages_to_scrape = pages_to_scrape
         self.num_jobs = num_jobs
         self.session = requests.Session()
         self.start_time = time.time()
         self.cross_process_review_count = 0
-        self.estimated_total_reviews = num_pages_to_scrape * 30
+        self.estimated_total_reviews = (pages_to_scrape[1] - pages_to_scrape[0]) * 30
 
         if num_jobs > 1:
             self.multiprocessing = True
@@ -44,12 +44,12 @@ class Scraper():
     def scrape_site(self):
         self.clear_all_data()
         if self.multiprocessing:
-            link_list = [BASE_URL.format(page) for page in range(1,self.num_pages_to_scrape)]
+            link_list = [BASE_URL.format(page) for page in range(self.pages_to_scrape[0],self.pages_to_scrape[1])]
             records = self.worker_pool.map(self.scrape_page, link_list)
             self.worker_pool.terminate()
             self.worker_pool.join()
         else:
-            for page in range(1, self.num_pages_to_scrape):
+            for page in range(self.pages_to_scrape[0], self.pages_to_scrape[1]):
                 self.scrape_page(BASE_URL.format(page))
         print('Scrape finished...')
         self.condense_data()
@@ -250,7 +250,7 @@ class Scraper():
         for file in all_files:
             with open(file, 'rb') as fin:
                 condensed_data += json.load(fin)
-
+        print(len(condensed_data))
         filename = '{}.json'.format(FILENAME)
         with open(filename, 'w') as fout:
             json.dump(condensed_data, fout)
@@ -271,8 +271,8 @@ class ReviewFormatException(Exception):
 
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
-    num_pages_to_scrape = 7071
+    pages_to_scrape = (27151, 50000)
     winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10)
 
-    winmag_scraper.scrape_site()
+    winmag_scraper.condense_data()
 
