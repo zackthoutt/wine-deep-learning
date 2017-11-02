@@ -22,3 +22,19 @@ The data consists of 10 fields:
 - *Price*: the cost for a bottle of the wine 
 
 I did not include the dataset that I scraped in this repository because of size, but feel free to run the scraper on your own or use the dataset that I provided on [Kaggle](https://www.kaggle.com/zynicide/wine-reviews).
+
+# Connect with me
+
+If you'd like to collaborate on a project, learn more about me, or just say hi, feel free to contact me using any of the social channels listed below.
+
+- [Personal Website](https://zackthoutt.com)
+- [Email](mailto:zackarey.thoutt@colorado.edu)
+- [LinkedIn](https://www.linkedin.com/in/zack-thoutt-57275655/)
+- [Twitter](https://twitter.com/zthoutt)
+- [Medium](https://medium.com/@zthoutt)
+- [Quora](https://www.quora.com/profile/Zack-Thoutt)
+- [HackerNews](https://news.ycombinator.com/submitted?id=zthoutt)
+- [Reddit](https://www.reddit.com/user/zthoutt/)
+- [Kaggle](https://www.kaggle.com/zynicide)
+- [Instagram](https://www.instagram.com/zthoutt/)
+- [500px](https://500px.com/zthoutt)
