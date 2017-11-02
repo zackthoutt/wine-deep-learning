@@ -273,8 +273,8 @@ class ReviewFormatException(Exception):
 
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
-    pages_to_scrape = (27151, 50000)
-    winmag_scraper = Scraper(num_pages_to_scrape=num_pages_to_scrape, num_jobs=10, clear_old_data=False)
+    pages_to_scrape = (3939, 7071)
+    winmag_scraper = Scraper(pages_to_scrape=pages_to_scrape, num_jobs=10, clear_old_data=False)
 
     winmag_scraper.condense_data()
 
