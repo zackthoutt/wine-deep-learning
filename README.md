@@ -23,6 +23,11 @@ The data consists of 10 fields:
 
 I did not include the dataset that I scraped in this repository because of size, but feel free to run the scraper on your own or use the dataset that I provided on [Kaggle](https://www.kaggle.com/zynicide/wine-reviews).
 
+# Places you may have seen this
+
+- [Kaggle](https://www.kaggle.com/zynicide/wine-reviews)
+- [Couchbase Tutorial](https://developer.couchbase.com/documentation/server/current/sdk/full-text-search-overview.html)
+
 # Connect with me
 
 If you'd like to collaborate on a project, learn more about me, or just say hi, feel free to contact me using any of the social channels listed below.
