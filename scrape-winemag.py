@@ -261,7 +261,7 @@ class Scraper():
         elapsed_time = round(time.time() - self.start_time, 2)
         time_remaining = round((self.estimated_total_reviews / self.cross_process_review_count) * elapsed_time, 2)
         print('{0}/{1} reviews | {2} sec elapsed | {3} sec remaining\r'.format(
-            self.cross_process_review_count, self.estimated_total_reviews, elapsed_time, time_remaining), end='')
+            self.cross_process_review_count, self.estimated_total_reviews, elapsed_time, time_remaining))
 
 
 class ReviewFormatException(Exception):
@@ -273,8 +273,12 @@ class ReviewFormatException(Exception):
 
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
-    pages_to_scrape = (3939, 7071)
+    pages_to_scrape = (1, 7071)
     winmag_scraper = Scraper(pages_to_scrape=pages_to_scrape, num_jobs=10, clear_old_data=False)
 
+    # Step 1: scrape data
+    winmag_scraper.scrape_site()
+
+    # Step 2: condense data
     winmag_scraper.condense_data()
 
