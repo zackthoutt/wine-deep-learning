@@ -95,6 +95,7 @@ class Scraper():
     def parse_review(self, review_soup):
         review_format = self.determine_review_format(review_soup)
         points = review_soup.find("span", {"id": "points"}).contents[0]
+        title = review_soup.find("div", {"class", "article-title"}).contents[0]
         description = review_soup.find("p", {"class": "description"}).contents[0]
         taster_name = review_soup.find("div", {"class", "taster"}).find("div", {"class", "name"}).contents[0]
         taster_twitter_handle = review_soup.find("div", {"class", "taster"}).find("div", {"class", "twitter-handle"}).contents[0]
@@ -175,6 +176,7 @@ class Scraper():
 
         review_data = {
             'points': points,
+            'title': title,
             'description': description,
             'taster_name': taster_name,
             'taster_twitter_handle': taster_twitter_handle,
