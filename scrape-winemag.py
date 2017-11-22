@@ -34,7 +34,7 @@ class Scraper():
         self.session = requests.Session()
         self.start_time = time.time()
         self.cross_process_review_count = 0
-        self.estimated_total_reviews = (pages_to_scrape[1] - pages_to_scrape[0]) * 30
+        self.estimated_total_reviews = (pages_to_scrape[1] + 1 - pages_to_scrape[0]) * 30
 
         if num_jobs > 1:
             self.multiprocessing = True
@@ -46,12 +46,12 @@ class Scraper():
         if self.clear_old_data:
             self.clear_data_dir()
         if self.multiprocessing:
-            link_list = [BASE_URL.format(page) for page in range(self.pages_to_scrape[0],self.pages_to_scrape[1])]
+            link_list = [BASE_URL.format(page) for page in range(self.pages_to_scrape[0],self.pages_to_scrape[1] + 1)]
             records = self.worker_pool.map(self.scrape_page, link_list)
             self.worker_pool.terminate()
             self.worker_pool.join()
         else:
-            for page in range(self.pages_to_scrape[0], self.pages_to_scrape[1]):
+            for page in range(self.pages_to_scrape[0], self.pages_to_scrape[1] + 1):
                 self.scrape_page(BASE_URL.format(page))
         print('Scrape finished...')
         self.condense_data()
