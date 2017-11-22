@@ -96,6 +96,8 @@ class Scraper():
         review_format = self.determine_review_format(review_soup)
         points = review_soup.find("span", {"id": "points"}).contents[0]
         description = review_soup.find("p", {"class": "description"}).contents[0]
+        taster_name = review_soup.find("div", {"class", "taster"}).find("div", {"class", "name"}).contents[0]
+        taster_twitter_handle = review_soup.find("div", {"class", "taster"}).find("div", {"class", "twitter-handle"}).contents[0]
 
         info_containers = review_soup.find(
             'ul', {'class': 'primary-info'}).find_all('li', {'class': 'row'})
@@ -174,6 +176,8 @@ class Scraper():
         review_data = {
             'points': points,
             'description': description,
+            'taster_name': taster_name,
+            'taster_twitter_handle': taster_twitter_handle,
             'price': price,
             'designation': designation,
             'variety': variety,
@@ -282,8 +286,9 @@ class ReviewFormatException(Exception):
 
 if __name__ == '__main__':
     # Total review results on their site are conflicting, hardcode as the max tested value for now
-    pages_to_scrape = (1, 7071)
-    winmag_scraper = Scraper(pages_to_scrape=pages_to_scrape, num_jobs=10, clear_old_data=False)
+    # pages_to_scrape = (1, 7554)
+    pages_to_scrape = (1, 1)
+    winmag_scraper = Scraper(pages_to_scrape=pages_to_scrape, num_jobs=1, clear_old_data=False)
 
     # Step 1: scrape data
     winmag_scraper.scrape_site()
