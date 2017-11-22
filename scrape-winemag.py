@@ -56,9 +56,18 @@ class Scraper():
         print('Scrape finished...')
         self.condense_data()
 
-    def scrape_page(self, page_url, isolated_review_count=0):
+    def scrape_page(self, page_url, isolated_review_count=0, retry_count=0):
         scrape_data = []
-        response = self.session.get(page_url, headers=HEADERS)
+        try:
+            response = self.session.get(page_url, headers=HEADERS)
+        except:
+            retry_count += 1
+            if retry_count <= 3:
+                self.session = requests.Session()
+                self.scrape_page(page_url, isolated_review_count, retry_count)
+            else:
+                raise
+
         soup = BeautifulSoup(response.content, 'html.parser')
         # Drop the first review-item; it's always empty
         reviews = soup.find_all('li', {'class': 'review-item'})[1:]
