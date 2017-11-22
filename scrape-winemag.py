@@ -280,7 +280,7 @@ class Scraper():
 
     def update_scrape_status(self):
         elapsed_time = round(time.time() - self.start_time, 2)
-        time_remaining = round((self.estimated_total_reviews / self.cross_process_review_count) * elapsed_time, 2)
+        time_remaining = round((self.estimated_total_reviews - self.cross_process_review_count) * (self.cross_process_review_count / elapsed_time), 2)
         print('{0}/{1} reviews | {2} sec elapsed | {3} sec remaining\r'.format(
             self.cross_process_review_count, self.estimated_total_reviews, elapsed_time, time_remaining))
 
