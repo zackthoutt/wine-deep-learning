@@ -75,7 +75,11 @@ class Scraper():
             self.cross_process_review_count += 1
             isolated_review_count += 1
             review_url = review.find('a', {'class': 'review-listing'})['href']
-            review_data = self.scrape_review(review_url)
+            try:
+                review_data = self.scrape_review(review_url)
+            except Exception as e:
+                print('Encountered error', e)
+                continue
             scrape_data.append(review_data)
             self.update_scrape_status()
         self.save_data(scrape_data)
@@ -98,13 +102,17 @@ class Scraper():
         title = review_soup.find("div", {"class", "article-title"}).contents[0]
         description = review_soup.find("p", {"class": "description"}).contents[0]
 
-        taster_name = review_soup.find("div", {"class", "taster"}).find("div", {"class", "name"})
-        if taster_name is not None:
-            taster_name = taster_name.contents[0]
+        try:
+            taster_name = review_soup.find("div", {"class", "taster"}).find("div", {"class", "name"})
+            if taster_name is not None:
+                taster_name = taster_name.contents[0]
 
-        taster_twitter_handle = review_soup.find("div", {"class", "taster"}).find("div", {"class", "twitter-handle"})
-        if taster_twitter_handle is not None:
-            taster_twitter_handle = taster_twitter_handle.contents[0]
+            taster_twitter_handle = review_soup.find("div", {"class", "taster"}).find("div", {"class", "twitter-handle"})
+            if taster_twitter_handle is not None:
+                taster_twitter_handle = taster_twitter_handle.contents[0]
+        except:
+            taster_name = None
+            taster_twitter_handle = None
 
         info_containers = review_soup.find(
             'ul', {'class': 'primary-info'}).find_all('li', {'class': 'row'})
