@@ -11,6 +11,7 @@ As a first step to creating my sommelier model was gathering some data. I starte
 The data consists of 10 fields:
 
 - *Points*: the number of points WineEnthusiast rated the wine on a scale of 1-100 (though they say they only post reviews for wines that score >=80)
+- *Title*: the title of the wine review, which often contains the vintage if you're interested in extracting that feature
 - *Variety*: the type of grapes used to make the wine (ie Pinot Noir)
 - *Description*: a few sentences from a sommelier describing the wine's taste, smell, look, feel, etc.
 - *Country*: the country that the wine is from
@@ -20,6 +21,11 @@ The data consists of 10 fields:
 - *Winery*: the winery that made the wine
 - *Designation*: the vineyard within the winery where the grapes that made the wine are from
 - *Price*: the cost for a bottle of the wine 
+- *Taster Name*: name of the person who tasted and reviewed the wine
+- *Taster Twitter Handle*: Twitter handle for the person who tasted ane reviewed the wine
+
+**UPDATED 11/24/2017**
+Title, Taster Name, and Taster Twitter Handle were collected and the issue with duplicate entires was resolved
 
 I did not include the dataset that I scraped in this repository because of size, but feel free to run the scraper on your own or use the dataset that I provided on [Kaggle](https://www.kaggle.com/zynicide/wine-reviews).
 
