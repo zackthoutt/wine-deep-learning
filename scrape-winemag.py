@@ -210,7 +210,9 @@ class Scraper:
             "href"
         ]
         try:
-            taster_name, taster_twitter_handle = self.scrape_taster(taster_url)
+            taster_name, taster_twitter_handle, taster_photo = self.scrape_taster(
+                taster_url
+            )
         except Exception as e:
             print("Encountered error", e)
 
@@ -220,6 +222,7 @@ class Scraper:
             "description": description,
             "taster_name": taster_name,
             "taster_twitter_handle": taster_twitter_handle,
+            "taster_photo": taster_photo,
             "price": price,
             "designation": designation,
             "variety": variety,
@@ -243,8 +246,8 @@ class Scraper:
     def parse_taster(self, taster_soup):
         name = taster_soup.title.string.split(" |")[0]
         twitter = taster_soup.find("li", {"class": "twitter"}).string
-
-        return name, twitter
+        photo = taster_soup.find("div", {"class": "contrib__photo"}).img["src"]
+        return name, twitter, photo
 
     def determine_review_format(self, review_soup):
         review_format = {}
